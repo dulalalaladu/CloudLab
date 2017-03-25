@@ -55,6 +55,14 @@ def list_all_images(conn):
     for image in conn.image.images():
         print(image.name)
 
+#The function list_all_flavors is tasked with retreiving all the flavors on an instance.
+#Input variable is the easblished connection to the OpenStack instance.
+#Output is a list of the uploaded images.
+def list_all_flavors(conn):
+    print("Flavors are:\n")
+    for flavor in conn.compute.flavors():
+        print(flavor.name)
+
 #The function create_new_subnet is tasked with creating a new subnet into the OpenStack instance.
 #Input variables are the established connection to the OpenStack instance, as well as network name, subnet name,
 #CIDR Block, and gateway IP address.
@@ -71,8 +79,16 @@ def upload_new_image (conn, image_name, image_location, image_format):
 
 #The function create_new_instance is tasked with instantiating a new VM instance in the OpenStack instnce.
 #Input variable are the established connection to the OpenStack instance, the instance name, the image name, the flavor name and the attached network.
-def create_new_instance(conn, instance_name, image_name, flavor_name, attach_network_id):
-    print("Hello World:")
+def create_new_instance(conn):
+    image_name = input("Please input the image name you would like to use:\n")
+    flavor_name = input("Please input the flavor name you would like to use:\n")
+    network_name = input("Please input the network name you would like to use:\n")
+    instance_name = input("Please input the name you would like to give your instance:\n")
+    image = conn.compute.find_image(image_name)
+    flavor = conn.compute.find_flavor(flavor_name)
+    network = conn.network.find_network(network_name)
+    server = conn.compute.create_server(name=instance_name, image_id=image.id, flavor_id=flavor.id, networks=[{"uuid": network.id}])
+    server = conn.compute.wait_for_server(server)
 
 #The function list_all_instances is tasked with returning a list of all the configured VM instances.
 #It will provide the list of names, which can be modified to also add a list of IDs, images per VM,...
