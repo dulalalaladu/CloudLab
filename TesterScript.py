@@ -12,7 +12,7 @@ from openstack import utils
 #Starting code to update the CTL IP address in the hosts file.
 while True:
 	try:
-		CTL = ipaddress.ip_address(input("Please enter the IP address of the CTL"))
+		CTL = ipaddress.ip_address(input("Please enter the IP address of the CTL\n"))
 		break
 	except ValueError:
 		print("Not a valid IP address")	
@@ -23,19 +23,20 @@ while True:
 	print ("2 to List All Subnets By CIDR")
 	print ("3 to List All Images By Name")
 	print ("4 to Create a New Subnet")
+	print ("5 to List All Flavors By Name")
+	print ("6 to Create New VM Instance")
 	print ("Press 999 at anytime to quit")
-	Choice = int(input("Please input the value of the operation you would like to perform"))
+	Choice = int(input("Please input the value of the operation you would like to perform\n"))
 
 	if Choice == 1:
 		#Code to ask for the username and password for the OpenStack instance.
 		#Create connection will be used.
-		URL = input("Please input the authorization URL from admin-openrc.sh")
-		region = input("Please enter the region")
-		p_name = input("Please enter the project name")
-		p_username = input("Please enter the project username")
-		p_password = input("Please enter the password")
+		URL = input("Please input the authorization URL from admin-openrc.sh\n")
+		region = input("Please enter the region\n")
+		p_name = input("Please enter the project name\n")
+		p_username = input("Please enter the project username\n")
+		p_password = input("Please enter the password\n")
 		connection = MasterScript.create_connection(URL,region,p_name,p_username,p_password)
-#		test.upload_image(connection)
 	elif Choice == 2:
 		MasterScript.list_all_subnets(connection)
 
@@ -43,18 +44,24 @@ while True:
 		MasterScript.list_all_images(connection)
 
 	elif Choice == 4:
-		netname = input("Please input the desired network name")
-		subname = input("Please input the desired subnet name")
-		version = input("Please input the version 4 or 6")
+		netname = input("Please input the desired network name\n")
+		subname = input("Please input the desired subnet name\n")
+		version = input("Please input the version 4 or 6\n")
 		while True:
 			try:
-				CIDR = ipaddress.ip_network(input("Please input the CIDR Block"))
-				gateway = ipaddress.ip_address(input("Please input the gatewayIP"))
+				CIDR = ipaddress.ip_network(input("Please input the CIDR Block\n"))
+				gateway = ipaddress.ip_address(input("Please input the gatewayIP\n"))
 				break
 			except ValueError:
 				print("Error in your CIDR or gateway, please retry")
 
 		MasterScript.create_new_subnet(connection,netname,subname,version,CIDR,gateway)
+	
+	elif Choice == 5:
+		MasterScript.list_all_flavors(connection)
+
+	elif Choice == 6:
+		MasterScript.create_new_instance(connection)
 
 	elif Choice == 999:
 		break
