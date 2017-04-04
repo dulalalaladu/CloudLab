@@ -28,6 +28,8 @@ while True:
 	print ("7 to List All Configured Instances")
 	print ("8 to List All Configured and Unassigned Public IP Addresses")
 	print ("9 to Create a New Floating IP Address")
+	print ("10 to Create a New Network Router")
+	print ("11 to Attach Router to New Network")
 	print ("Press 999 at anytime to quit")
 	Choice = int(input("Please input the value of the operation you would like to perform\n"))
 
@@ -74,6 +76,12 @@ while True:
 
 	elif Choice == 9:
 		MasterScript.create_floating_ip(connection)
+
+	elif Choice == 10:
+		MasterScript.create_new_router(connection)	
+
+	elif Choice == 11:
+		MasterScript.create_new_router_interface(connection)
 
 	elif Choice == 999:
 		break
