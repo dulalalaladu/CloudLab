@@ -45,9 +45,8 @@ def create_connection(URL, region, p_name, p_username, p_password):
 def list_all_subnets(conn):
     print("Subnets are:")
     for subnet in conn.network.subnets():
-        print (subnet.cidr)
+        print (subnet.name+" || "+subnet.cidr)
 
-#The function list_all_images is tasked with retreiving all the uploaded images on an instance.
 #Input variable is the easblished connection to the OpenStack instance.
 #Output is a list of the uploaded images.
 def list_all_images(conn):
@@ -94,7 +93,10 @@ def create_new_instance(conn):
 #It will provide the list of names, which can be modified to also add a list of IDs, images per VM,...
 #Input varibales are the established connection to the OpenStack instance.
 def list_all_instances(conn):
-    print("Hello World:")
+    print("Configured Servers and their states are:")
+    for server in conn.compute.servers():
+        print(server.name+"||"+server.status)
+        print("*************************************")
 
 #The function start_VM_instance is tasked with turning on a VM.
 #Input variables are the established connection to the OpenStack instance and the VM ID or VM name.
@@ -111,3 +113,9 @@ def stop_VM_instance(conn,VM_ID):
 def create_new_router(conn,Router_Name):
     print("Hello World:")
 
+#The function list_free_floating is tasked with returning a list of all configured and unassigned.
+#Input varibales are the established connection to the OpenStack instance.
+def list_free_floating(conn):
+    print("Free Unassigned Floating IP Addresses are are:")
+    for ip in conn.network.ips():
+        print (ip.floating_ip_address)
