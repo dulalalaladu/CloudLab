@@ -27,6 +27,7 @@ while True:
 	print ("6 to Create New VM Instance")
 	print ("7 to List All Configured Instances")
 	print ("8 to List All Configured and Unassigned Public IP Addresses")
+	print ("9 to Create a New Floating IP Address")
 	print ("Press 999 at anytime to quit")
 	Choice = int(input("Please input the value of the operation you would like to perform\n"))
 
@@ -65,11 +66,14 @@ while True:
 	elif Choice == 6:
 		MasterScript.create_new_instance(connection)
 
-	elif Choice ==7:
+	elif Choice == 7:
 		MasterScript.list_all_instances(connection)
 
 	elif Choice == 8:
 		MasterScript.list_free_floating(connection)
+
+	elif Choice == 9:
+		MasterScript.create_floating_ip(connection)
 
 	elif Choice == 999:
 		break
