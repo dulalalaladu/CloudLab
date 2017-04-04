@@ -119,3 +119,10 @@ def list_free_floating(conn):
     print("Free Unassigned Floating IP Addresses are are:")
     for ip in conn.network.ips():
         print (ip.floating_ip_address)
+
+#The function create_floating_ip is tasked with creating a new floating IP address from the assigned pool.
+#Input varibales are the established connection to the OpenStack instance.
+def create_floating_ip(conn):
+    print("Creating New Floating IP.")
+    external_network = conn.network.find_network("ext-net")
+    conn.network.create_ip(floating_network_id=external_network.id)
