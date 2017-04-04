@@ -42,10 +42,12 @@ def create_connection(URL, region, p_name, p_username, p_password):
 
 #Input variable is the established connection to the OpenStack instance.
 #Output is a list of configured subnets.	
+# PROBLEM TO LOOK INTO: NETWOKS AE SORTED IN A WAY DIFFERENT THAN SUBNETS, THE DIRECT CORRELATION IN ZIP NEEDS TO BE FIXED!
+# NEED TO CHECK HOW OPENSTACK SORT BOTH NETWORK AND SUBNET TO RECONCILE THE OUTPUT FOR INTEGRITY
 def list_all_subnets(conn):
-    print("Subnets are:")
-    for subnet in conn.network.subnets():
-        print (subnet.name+" || "+subnet.cidr)
+    print("Network  are:")
+    for networks,subnets in zip(conn.network.networks(),conn.network.subnets()):
+        print ("Network Name: "+networks.name+" || Subnet Name: " + subnets.name + " || CIDR Range: " + subnets.cidr)
 
 #Input variable is the easblished connection to the OpenStack instance.
 #Output is a list of the uploaded images.
@@ -126,3 +128,23 @@ def create_floating_ip(conn):
     print("Creating New Floating IP.")
     external_network = conn.network.find_network("ext-net")
     conn.network.create_ip(floating_network_id=external_network.id)
+
+#The function create_new_router is tasked with creating a new network router.
+#Input varibales are the established connection to the OpenStack instance.
+def create_new_router(conn):
+    router_name = input("Please enter desired router name\n")
+    conn.network.create_router(name=router_name)
+
+#The function create_new_router_interface is tasked with attaching a router to an interface.
+#The function will first list the different networks available for the router to hook unto.
+#Input varibales are the established connection to the OpenStack instance.
+# PROBLEM TO LOOK INTO: THE ROUTER DOES NOT SHARE ITS PRIVATE SUBNET INTERFACE DETAILS! ONLY THE PUBLIC INTERFACES!
+def create_new_router_interface(conn):
+    print ("List of available configured routers:")
+    for router in conn.network.routers():
+        print(router.name)
+    router_name = input("Please enter desired router name\n")
+    print ("Selected Router is connected to the following networks:")
+    for routers in conn.network.routers():
+        print (routers)
+
