@@ -42,12 +42,17 @@ def create_connection(URL, region, p_name, p_username, p_password):
 
 #Input variable is the established connection to the OpenStack instance.
 #Output is a list of configured subnets.	
-# PROBLEM TO LOOK INTO: NETWOKS AE SORTED IN A WAY DIFFERENT THAN SUBNETS, THE DIRECT CORRELATION IN ZIP NEEDS TO BE FIXED!
-# NEED TO CHECK HOW OPENSTACK SORT BOTH NETWORK AND SUBNET TO RECONCILE THE OUTPUT FOR INTEGRITY
 def list_all_subnets(conn):
-    print("Network  are:")
-    for networks,subnets in zip(conn.network.networks(),conn.network.subnets()):
-        print ("Network Name: "+networks.name+" || Subnet Name: " + subnets.name + " || CIDR Range: " + subnets.cidr)
+    for networks in conn.network.networks():
+        name = networks.name
+        netid = networks.id
+        print ("########################################################")
+        print ("Network Name: "+name+" || ",end="")
+        for subnets in conn.network.subnets():
+            if subnets.network_id == netid:
+                print("Subnet Name: " + subnets.name + " || CIDR Range: " + subnets.cidr+" ||",end=" ")
+        print ("########################################################")    
+    print ("########################################################")
 
 #Input variable is the easblished connection to the OpenStack instance.
 #Output is a list of the uploaded images.
@@ -110,11 +115,6 @@ def start_VM_instance(conn,VM_ID):
 def stop_VM_instance(conn,VM_ID):
     print("Hello World:")
 
-#The function create_new_router is tasked with creating a new router instance inside OpenStack.
-#Input variables are the established connection to the OpenStack instance and the Router Namee.
-def create_new_router(conn,Router_Name):
-    print("Hello World:")
-
 #The function list_free_floating is tasked with returning a list of all configured and unassigned.
 #Input varibales are the established connection to the OpenStack instance.
 def list_free_floating(conn):
@@ -140,11 +140,21 @@ def create_new_router(conn):
 #Input varibales are the established connection to the OpenStack instance.
 # PROBLEM TO LOOK INTO: THE ROUTER DOES NOT SHARE ITS PRIVATE SUBNET INTERFACE DETAILS! ONLY THE PUBLIC INTERFACES!
 def create_new_router_interface(conn):
+    print("*************************************")
     print ("List of available configured routers:")
-    for router in conn.network.routers():
-        print(router.name)
-    router_name = input("Please enter desired router name\n")
-    print ("Selected Router is connected to the following networks:")
     for routers in conn.network.routers():
-        print (routers)
-
+        print (routers.name)
+    print("*************************************")
+    router_name = input("Please enter desired router name\n")
+    router_id = conn.network.find_router(router_name)
+    router_idd = router_id.id
+    print ("Selected Router has the following configured IP addresses:")
+    print("*************************************")
+    for ports in conn.network.ports():
+        if ports.device_id == router_idd:
+            print (ports.fixed_ips[0]['ip_address'])
+    print("*************************************")
+    list_all_subnets(conn)
+    new_interface_network = input ("Please enter the subnet name you would like add")
+    new_network = conn.network.find_subnet(new_interface_network)
+    conn.network.add_interface_to_router(router_id,new_network.id)
