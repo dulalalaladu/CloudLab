@@ -30,6 +30,10 @@ while True:
 	print ("9 to Create a New Floating IP Address")
 	print ("10 to Create a New Network Router")
 	print ("11 to Attach Router to New Network")
+	print ("12 to Take a Snapshot of a Server")
+	print ("13 to Start a VM")
+	print ("14 to Stop a VM")
+	print ("15 to add new IP address to a VM")
 	print ("Press 999 at anytime to quit")
 	Choice = int(input("Please input the value of the operation you would like to perform\n"))
 
@@ -82,6 +86,18 @@ while True:
 
 	elif Choice == 11:
 		MasterScript.create_new_router_interface(connection)
+
+	elif Choice == 12:
+		MasterScript.take_server_snapshot(connection)
+
+	elif Choice == 13:
+		MasterScript.start_VM_instance(connection)
+
+	elif Choice == 14:
+		MasterScript.stop_VM_instance(connection)
+	
+	elif Choice == 15:
+		MasterScript.add_VM_IP(connection)
 
 	elif Choice == 999:
 		break
