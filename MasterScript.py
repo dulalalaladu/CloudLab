@@ -107,13 +107,19 @@ def list_all_instances(conn):
 
 #The function start_VM_instance is tasked with turning on a VM.
 #Input variables are the established connection to the OpenStack instance and the VM ID or VM name.
-def start_VM_instance(conn,VM_ID):
-    print("Hello World:")
+def start_VM_instance(conn):
+    list_all_instances(conn)
+    instance_name = input("Please enter the name of the server you would like to start")
+    instance = conn.compute.find_server(instance_name)
+    conn.compute.start_server(instance)
 
 #The function stop_VM_instance is tasked with turning off a VM.
 #Input variables are the established connection to the OpenStack instance and the VM ID or VM name.
-def stop_VM_instance(conn,VM_ID):
-    print("Hello World:")
+def stop_VM_instance(conn):
+    list_all_instances(conn)
+    instance_name = input("Please enter the name of the server you would like to stop")
+    instance = conn.compute.find_server(instance_name)
+    conn.compute.stop_server(instance)
 
 #The function list_free_floating is tasked with returning a list of all configured and unassigned.
 #Input varibales are the established connection to the OpenStack instance.
@@ -155,6 +161,34 @@ def create_new_router_interface(conn):
             print (ports.fixed_ips[0]['ip_address'])
     print("*************************************")
     list_all_subnets(conn)
-    new_interface_network = input ("Please enter the subnet name you would like add")
-    new_network = conn.network.find_subnet(new_interface_network)
-    conn.network.add_interface_to_router(router_id,new_network.id)
+    new_interface_network = input ("Please enter the network name you would like add")
+    new_network = conn.network.find_network(new_interface_network)
+    conn.network.create_port(admin_state_up=True, device_id=router_idd, network_id=new_network.id)
+
+#The function take_server_snapshot is tasked with taken a snapshot of a given VM
+#The snapshot will be available at the CTL on the /var/lib/glance/images folder
+#We start by listing the configured instances, find the server instance based on name and passing it to the API call
+#Input variables are the established connection to the OpenStack instance.
+def take_server_snapshot(conn):
+    list_all_instances(conn)
+    instance_name = input ("Please enter the name of the instance you wish to snapshot")
+    instance = conn.compute.find_server(instance_name)
+    conn.compute.shelve_server(instance)
+
+#The function add_VM_IP is tasked with adding a Fixed IP Address to a VM of choice
+#The function starts by listing all the configured subnets and instances
+#User is prompted to enter the desired VM to add an IP to, as well as the desired network
+#Inpute variables are the established connection to the OpenStack instance.
+def add_VM_IP(conn):
+    list_all_subnets(conn)
+    list_all_instances(conn)
+    instance_name = input ("Please choose VM to add IP to")
+    instance = conn.compute.find_server(instance_name)
+    print("**************************")
+    print("The Selected Server has the following IP addresses configured")
+    for ip in conn.compute.server_ips(instance):
+        print(ip)
+    network_name = input ("Please enter the network name you would like to add")
+    network = conn.network.find_network(network_name)
+    port = conn.network.create_port(admin_state_up=True, network_id=network.id)
+    conn.compute.create_server_interface(server=instance, port_id=port.id)
