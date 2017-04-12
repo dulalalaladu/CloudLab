@@ -2,10 +2,19 @@ import sys
 import ipaddress
 import os
 import os_client_config
+import time
+import datetime
 from openstack import connection
 from openstack import profile
 from openstack import utils
 from python_hosts import Hosts, HostsEntry
+from xml.etree import ElementTree as etree
+from xml.dom import minidom
+
+def prettify(elem):
+    rough_string = etree.tostring(elem, 'utf-8')
+    reparsed = minidom.parseString(rough_string)
+    return reparsed.toprettyxml(indent="  ")
 
 #The function update_hosts_file is responsible for update the hosts file inside a Linux environment.
 #It is included for use to update with the IP of the CTL server in case the OpenStack instance has 
@@ -80,8 +89,12 @@ def create_new_subnet(conn, net_name, sub_name, versionIP, cidr, gatewayIP):
 #The function upload_new_image is tasked with uploading a new image into the OpenStack instance.
 #Assumption is that the user has the image stored locally on the control machine, knows the name and its details.
 #Input variables are the established connection to the OpenStack instance, the image name and location, the image format (VDI, ISO, RAW)
-def upload_new_image (conn, image_name, image_location, image_format):
-    print("Hello World:")
+def upload_new_image (conn):
+   image_name =  input("Plese enter the name of the image you would like to upload")
+   container = input("Please enter the Container Format as one of ami, ari, aki, bare,ovf, ova, or docker")
+   disk = input ("Please enter the Disk Format as one of ami, ari, aki, vhd, vmdk, raw, qcow2, vdi, or iso")
+   with open(image_name) as fimage:
+       conn.image.upload_image(container_format=container, disk_format=disk,data=fimage)
 
 #The function create_new_instance is tasked with instantiating a new VM instance in the OpenStack instnce.
 #Input variable are the established connection to the OpenStack instance, the instance name, the image name, the flavor name and the attached network.
@@ -144,7 +157,6 @@ def create_new_router(conn):
 #The function create_new_router_interface is tasked with attaching a router to an interface.
 #The function will first list the different networks available for the router to hook unto.
 #Input varibales are the established connection to the OpenStack instance.
-# PROBLEM TO LOOK INTO: THE ROUTER DOES NOT SHARE ITS PRIVATE SUBNET INTERFACE DETAILS! ONLY THE PUBLIC INTERFACES!
 def create_new_router_interface(conn):
     print("*************************************")
     print ("List of available configured routers:")
@@ -192,3 +204,81 @@ def add_VM_IP(conn):
     network = conn.network.find_network(network_name)
     port = conn.network.create_port(admin_state_up=True, network_id=network.id)
     conn.compute.create_server_interface(server=instance, port_id=port.id)
+
+
+def Profile_OpenStack(conn):
+    Profile = etree.Element('Profile')
+    Networks = etree.SubElement(Profile, 'Networks')
+    
+    for networks in conn.network.networks():
+        Network_Name = etree.SubElement(Networks,'Network')
+        Network_Name.attrib['Name'] = networks.name
+        for subnets in conn.network.subnets():
+            if subnets.network_id == networks.id:
+                Subnet_Details = etree.SubElement(Network_Name,'Subnet')
+                Subnet_Details.attrib['Name'] = subnets.name
+                #Subnet_Detail_ID = etree.SubElement(Subnet_Details,'Subnet_ID')
+                #Subnet_Detail_ID.text = subnets.id
+                Subnet_Detail_CIDR = etree.SubElement(Subnet_Details,'Subnet_CIDR')
+                Subnet_Detail_CIDR.text = subnets.cidr
+    
+    Routers = etree.SubElement(Profile,'Routers')
+    for routers in conn.network.routers():
+        Router_Name = etree.SubElement(Routers,'Router')
+        Router_Name.attrib['Name'] = routers.name
+        for ports in conn.network.ports():
+            if ports.device_id == routers.id:
+                Router_Interface = etree.SubElement(Router_Name,'Interface')
+                Router_Interface.attrib['ID'] = ports.id
+                Router_IP = etree.SubElement(Router_Interface,'IP')
+                Router_IP.text = ports.fixed_ips[0]['ip_address']
+    
+    Images = etree.SubElement(Profile,'Images')
+    for images in conn.image.images():
+        Image_Name = etree.SubElement(Images,'Image')
+        Image_Name.attrib['Name'] = images.name
+        Image_Container_Format = etree.SubElement(Image_Name,'ContainerFormat')
+        Image_Container_Format.text = images.container_format
+        Image_Disk_Format = etree.SubElement(Image_Name,'DiskFormat')
+        Image_Disk_Format.text = images.disk_format
+
+    Flavors = etree.SubElement(Profile,'Flavors')
+    for flavors in conn.compute.flavors():
+        Flavor_Name = etree.SubElement(Flavors,'Flavor')
+        Flavor_Name.attrib['Name'] = flavors.name
+        Flavor_VCPU = etree.SubElement(Flavor_Name,'VCPU')
+        Flavor_VCPU.text = str(flavors.vcpus)
+        Flavor_Disk = etree.SubElement(Flavor_Name,'Disk')
+        Flavor_Disk.text = str(flavors.disk)
+        Flavor_Ram = etree.SubElement(Flavor_Name,'RAM')
+        Flavor_Ram.text = str(flavors.ram)
+
+    Instances = etree.SubElement(Profile,'Instances')
+    for instances in conn.compute.servers():
+        Instances_Name = etree.SubElement(Instances,'Instance')
+        Instances_Name.attrib['Name'] = instances.name
+        Instances_Status = etree.SubElement(Instances_Name,'Status')
+        Instances_Status.text = instances.status
+        for flavor in conn.compute.flavors():
+            if flavor.links[1]['href'] == instances.flavor['links'][0]['href']:
+                Instances_Flavor = etree.SubElement(Instances_Name,'Flavor')
+                Instances_Flavor.text = flavor.name
+		
+        for image in conn.image.images():
+            if image.id == instances.image['id']:
+                Instances_Image = etree.SubElement(Instances_Name,'Image')
+                Instances_Image.text = image.name
+		
+        for ports in conn.network.ports():
+            if ports.device_id == instances.id:
+                Instances_Interface = etree.SubElement(Instances_Name,'Interface')
+                Instances_Interface.attrib['ID'] = ports.id
+                Instances_IP = etree.SubElement(Instances_Interface,'IP')
+                Instances_IP.text = ports.fixed_ips[0]['ip_address']
+ 
+    TimeStamp = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d--%H-%M-%S') 
+    Filename = 'OpenStackProfile-' + TimeStamp + ".xml"
+    print(prettify(Profile))
+    Profile_Output = open(Filename,'w')
+    print (prettify(Profile),file=Profile_Output)
+    Profile_Output.close()
